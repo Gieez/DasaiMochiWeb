@@ -13,7 +13,6 @@
         margin: 0;
         padding: 0;
       }
-
       body {
         font-family: "Segoe UI", sans-serif;
         background: #0f0f1a;
@@ -21,8 +20,6 @@
         min-height: 100vh;
         padding-bottom: 30px;
       }
-
-      /* HEADER */
       .header {
         background: linear-gradient(135deg, #1a1a2e, #16213e);
         padding: 20px 16px;
@@ -42,8 +39,6 @@
         font-size: 0.8em;
         margin-top: 4px;
       }
-
-      /* STATUS */
       .status {
         display: flex;
         align-items: center;
@@ -75,15 +70,11 @@
           opacity: 0.3;
         }
       }
-
-      /* CONTAINER */
       .wrap {
         max-width: 480px;
         margin: 0 auto;
         padding: 14px 14px 0;
       }
-
-      /* CARD */
       .card {
         background: #1a1a2e;
         border: 1px solid #2a2a4a;
@@ -99,8 +90,6 @@
         margin-bottom: 14px;
         font-weight: 600;
       }
-
-      /* SLIDER ROW */
       .row {
         display: flex;
         align-items: center;
@@ -128,8 +117,6 @@
         min-width: 38px;
         text-align: right;
       }
-
-      /* TOGGLE */
       .toggle-row {
         display: flex;
         align-items: center;
@@ -174,8 +161,6 @@
       .tog input:checked + .sl:before {
         transform: translateX(22px);
       }
-
-      /* BUTTONS */
       .btn {
         display: block;
         width: 100%;
@@ -209,8 +194,10 @@
         background: #00b894;
         color: #fff;
       }
-
-      /* EMOTE GRID */
+      .btn-warn {
+        background: #fdcb6e;
+        color: #1a1a2e;
+      }
       .emote-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -233,8 +220,6 @@
         color: #fff;
         border-color: #e94560;
       }
-
-      /* CONNECT INPUT */
       .connect-row {
         display: flex;
         gap: 8px;
@@ -264,8 +249,6 @@
         font-size: 0.88em;
         white-space: nowrap;
       }
-
-      /* TOAST */
       .toast {
         position: fixed;
         bottom: 24px;
@@ -285,12 +268,85 @@
       .toast.show {
         opacity: 1;
       }
-
-      /* IP hint */
       .hint {
         font-size: 0.75em;
         color: #555;
         margin-top: 6px;
+      }
+
+      /* ── DRAW CANVAS ── */
+      .canvas-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .oled-frame {
+        border: 2px solid #e94560;
+        border-radius: 6px;
+        padding: 3px;
+        background: #000;
+        position: relative;
+        display: inline-block;
+      }
+      #drawCanvas {
+        display: block;
+        image-rendering: pixelated;
+        cursor: crosshair;
+        touch-action: none;
+      }
+      .draw-tools {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+      }
+      .tool-btn {
+        flex: 1;
+        padding: 8px 4px;
+        border: 1px solid #3a3a5a;
+        border-radius: 8px;
+        background: #1e1e35;
+        color: #bbb;
+        font-size: 0.78em;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.15s;
+      }
+      .tool-btn.active {
+        background: #e94560;
+        color: #fff;
+        border-color: #e94560;
+      }
+      .tool-btn:active {
+        opacity: 0.7;
+      }
+      .pen-size-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+      }
+      .pen-size-wrap label {
+        font-size: 0.8em;
+        color: #bbb;
+        white-space: nowrap;
+      }
+      .pen-size-wrap input {
+        flex: 1;
+        accent-color: #e94560;
+      }
+      .pen-size-wrap span {
+        font-size: 0.8em;
+        color: #e94560;
+        font-weight: bold;
+        min-width: 20px;
+        text-align: right;
+      }
+      .canvas-hint {
+        font-size: 0.72em;
+        color: #555;
+        text-align: center;
       }
     </style>
   </head>
@@ -318,14 +374,75 @@
           <button onclick="connect()">Connect</button>
         </div>
         <p class="hint">
-          Default: sambungkan HP ke WiFi "DasaiMochi", password "mochi1234"
+          Sambungkan HP ke WiFi "DasaiMochi", password "12345678"
         </p>
+      </div>
+
+      <!-- DRAW TO OLED -->
+      <div class="card">
+        <div class="card-title">Gambar ke OLED</div>
+        <div class="canvas-wrap">
+          <div class="oled-frame">
+            <canvas id="drawCanvas" width="128" height="64"></canvas>
+          </div>
+          <div class="draw-tools">
+            <div class="tool-btn active" id="toolPen" onclick="setTool('pen')">
+              ✏️ Pen
+            </div>
+            <div class="tool-btn" id="toolEraser" onclick="setTool('eraser')">
+              ⬜ Hapus
+            </div>
+            <div class="tool-btn" id="toolFill" onclick="setTool('fill')">
+              🪣 Fill
+            </div>
+          </div>
+          <div class="pen-size-wrap">
+            <label>Ukuran</label>
+            <input
+              type="range"
+              id="penSize"
+              min="1"
+              max="8"
+              value="2"
+              oninput="
+                penSize = +this.value;
+                document.getElementById('penSizeVal').textContent = this.value;
+              "
+            />
+            <span id="penSizeVal">2</span>
+          </div>
+          <div style="display: flex; gap: 8px; width: 100%">
+            <button
+              class="btn btn-primary"
+              style="margin: 0"
+              onclick="sendDraw()"
+            >
+              📤 Kirim ke OLED
+            </button>
+            <button
+              class="btn btn-secondary"
+              style="margin: 0; flex: 0 0 auto; width: auto; padding: 11px 14px"
+              onclick="clearCanvas()"
+            >
+              🗑️
+            </button>
+            <button
+              class="btn btn-secondary"
+              style="margin: 0; flex: 0 0 auto; width: auto; padding: 11px 14px"
+              onclick="invertCanvas()"
+            >
+              ⬛
+            </button>
+          </div>
+          <p class="canvas-hint">
+            Gambar di canvas 128×64px → tampil di OLED ~4 detik
+          </p>
+        </div>
       </div>
 
       <!-- ANIMASI SETTINGS -->
       <div class="card">
         <div class="card-title">Animasi</div>
-
         <div class="row">
           <label>Kecepatan</label>
           <input
@@ -341,7 +458,6 @@
           />
           <span class="val" id="speedVal">3</span>
         </div>
-
         <div class="row">
           <label>Jeda Emote</label>
           <input
@@ -359,7 +475,6 @@
           />
           <span class="val" id="delayVal">1.5s</span>
         </div>
-
         <div class="row">
           <label>Brightness</label>
           <input
@@ -429,7 +544,7 @@
     <div class="toast" id="toast"></div>
 
     <script>
-      // ===== CONFIG =====
+      // ===== EMOTES =====
       const EMOTES = [
         "hidung_berasap",
         "tanjiro",
@@ -448,8 +563,8 @@
       ];
 
       // ===== WEBSOCKET =====
-      let ws = null;
-      let reconnectTimer = null;
+      let ws = null,
+        reconnectTimer = null;
 
       function connect() {
         const ip = document.getElementById("ipInput").value.trim();
@@ -472,22 +587,16 @@
           setStatus(false, "Gagal connect");
           return;
         }
-
         ws.onopen = () => {
           setStatus(true, "Terhubung ke " + ip);
           showToast("Connected!");
         };
-
         ws.onclose = () => {
           setStatus(false, "Terputus — reconnecting...");
           ws = null;
           reconnectTimer = setTimeout(() => openWS(ip), 3000);
         };
-
-        ws.onerror = () => {
-          setStatus(false, "Error koneksi");
-        };
-
+        ws.onerror = () => setStatus(false, "Error koneksi");
         ws.onmessage = (e) => {
           try {
             const d = JSON.parse(e.data);
@@ -511,27 +620,172 @@
         };
       }
 
-      function setStatus(connected, text) {
-        document.getElementById("dot").className =
-          "dot " + (connected ? "on" : "off");
-        document.getElementById("statusText").textContent = text;
+      function setStatus(ok, txt) {
+        document.getElementById("dot").className = "dot " + (ok ? "on" : "off");
+        document.getElementById("statusText").textContent = txt;
       }
 
-      // ===== SEND =====
       function sendSet(key, val) {
         send({ type: "set", key, val: parseInt(val) });
       }
-
       function sendCmd(cmd) {
         send({ type: "cmd", cmd });
       }
-
       function send(obj) {
-        if (ws && ws.readyState === WebSocket.OPEN) {
+        if (ws && ws.readyState === WebSocket.OPEN)
           ws.send(JSON.stringify(obj));
-        } else {
-          showToast("Belum terhubung!");
+        else showToast("Belum terhubung!");
+      }
+
+      // ===== DRAW TO OLED =====
+      const dc = document.getElementById("drawCanvas");
+      const dctx = dc.getContext("2d");
+
+      // Skala tampilan: 3× biar enak digambar
+      const SCALE = 3;
+      dc.style.width = 128 * SCALE + "px";
+      dc.style.height = 64 * SCALE + "px";
+
+      // Init hitam
+      dctx.fillStyle = "#000";
+      dctx.fillRect(0, 0, 128, 64);
+
+      let tool = "pen";
+      let penSize = 2;
+      let drawing = false;
+
+      function setTool(t) {
+        tool = t;
+        ["pen", "eraser", "fill"].forEach((n) => {
+          document
+            .getElementById("tool" + n.charAt(0).toUpperCase() + n.slice(1))
+            .classList.toggle("active", n === t);
+        });
+      }
+
+      // Koordinat canvas pixel dari event
+      function getPos(e) {
+        const r = dc.getBoundingClientRect();
+        const scaleX = 128 / r.width;
+        const scaleY = 64 / r.height;
+        const src = e.touches ? e.touches[0] : e;
+        return {
+          x: Math.floor((src.clientX - r.left) * scaleX),
+          y: Math.floor((src.clientY - r.top) * scaleY),
+        };
+      }
+
+      function drawAt(x, y) {
+        if (tool === "pen") {
+          dctx.fillStyle = "#fff";
+          dctx.fillRect(
+            x - Math.floor(penSize / 2),
+            y - Math.floor(penSize / 2),
+            penSize,
+            penSize,
+          );
+        } else if (tool === "eraser") {
+          dctx.fillStyle = "#000";
+          dctx.fillRect(
+            x - Math.floor(penSize / 2),
+            y - Math.floor(penSize / 2),
+            penSize,
+            penSize,
+          );
+        } else if (tool === "fill") {
+          floodFill(
+            x,
+            y,
+            dctx.getImageData(x, y, 1, 1).data[0] > 128 ? 0 : 255,
+          );
         }
+      }
+
+      function floodFill(sx, sy, targetColor) {
+        const img = dctx.getImageData(0, 0, 128, 64);
+        const d = img.data;
+        const fill =
+          targetColor === 255 ? [255, 255, 255, 255] : [0, 0, 0, 255];
+        const match = (i) => (d[i] > 128 ? 255 : 0);
+        const stack = [[sx, sy]];
+        const visited = new Uint8Array(128 * 64);
+        while (stack.length) {
+          const [x, y] = stack.pop();
+          if (x < 0 || x >= 128 || y < 0 || y >= 64) continue;
+          const i = (y * 128 + x) * 4;
+          if (visited[y * 128 + x]) continue;
+          if (match(i) !== targetColor) continue;
+          visited[y * 128 + x] = 1;
+          d[i] = fill[0];
+          d[i + 1] = fill[1];
+          d[i + 2] = fill[2];
+          d[i + 3] = fill[3];
+          stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+        }
+        dctx.putImageData(img, 0, 0);
+      }
+
+      dc.addEventListener("mousedown", (e) => {
+        drawing = true;
+        drawAt(...Object.values(getPos(e)));
+      });
+      dc.addEventListener("mousemove", (e) => {
+        if (drawing) drawAt(...Object.values(getPos(e)));
+      });
+      dc.addEventListener("mouseup", () => (drawing = false));
+      dc.addEventListener("mouseleave", () => (drawing = false));
+      dc.addEventListener(
+        "touchstart",
+        (e) => {
+          e.preventDefault();
+          drawing = true;
+          drawAt(...Object.values(getPos(e)));
+        },
+        { passive: false },
+      );
+      dc.addEventListener(
+        "touchmove",
+        (e) => {
+          e.preventDefault();
+          if (drawing) drawAt(...Object.values(getPos(e)));
+        },
+        { passive: false },
+      );
+      dc.addEventListener("touchend", () => (drawing = false));
+
+      function clearCanvas() {
+        dctx.fillStyle = "#000";
+        dctx.fillRect(0, 0, 128, 64);
+      }
+
+      function invertCanvas() {
+        const img = dctx.getImageData(0, 0, 128, 64);
+        for (let i = 0; i < img.data.length; i += 4) {
+          img.data[i] = 255 - img.data[i];
+          img.data[i + 1] = 255 - img.data[i + 1];
+          img.data[i + 2] = 255 - img.data[i + 2];
+        }
+        dctx.putImageData(img, 0, 0);
+      }
+
+      function sendDraw() {
+        // Ambil bitmap 128×64, konversi ke array bytes (row-major, MSB-first)
+        // 1 byte = 8 pixel horizontal → 16 bytes per row × 64 row = 1024 bytes
+        const img = dctx.getImageData(0, 0, 128, 64);
+        const bytes = new Array(1024).fill(0);
+        for (let row = 0; row < 64; row++) {
+          for (let byteCol = 0; byteCol < 16; byteCol++) {
+            let b = 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const col = byteCol * 8 + bit;
+              const i = (row * 128 + col) * 4;
+              if (img.data[i] > 128) b |= 0x80 >> bit; // MSB first
+            }
+            bytes[row * 16 + byteCol] = b;
+          }
+        }
+        send({ type: "draw", px: bytes });
+        showToast("Terkirim! Muncul di OLED ~4 detik");
       }
 
       // ===== EMOTE GRID =====
@@ -555,7 +809,6 @@
         setTimeout(() => t.classList.remove("show"), 2000);
       }
 
-      // Auto connect on load
       connect();
     </script>
   </body>
