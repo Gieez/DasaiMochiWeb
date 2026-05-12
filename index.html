@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <title>Dasai Mochi</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background: #0f0f1a;
+        color: #fff;
+        min-height: 100vh;
+        padding-bottom: 30px;
+      }
+
+      /* HEADER */
+      .header {
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        padding: 20px 16px;
+        text-align: center;
+        border-bottom: 2px solid #e94560;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .header h1 {
+        font-size: 1.5em;
+        color: #e94560;
+        letter-spacing: 3px;
+      }
+      .header p {
+        color: #888;
+        font-size: 0.8em;
+        margin-top: 4px;
+      }
+
+      /* STATUS */
+      .status {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 6px;
+        font-size: 0.8em;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #555;
+        transition: background 0.3s;
+      }
+      .dot.on {
+        background: #00ff88;
+        animation: pulse 1.5s infinite;
+      }
+      .dot.off {
+        background: #e94560;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      /* CONTAINER */
+      .wrap {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 14px 14px 0;
+      }
+
+      /* CARD */
+      .card {
+        background: #1a1a2e;
+        border: 1px solid #2a2a4a;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+      }
+      .card-title {
+        font-size: 0.8em;
+        color: #e94560;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 14px;
+        font-weight: 600;
+      }
+
+      /* SLIDER ROW */
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        gap: 10px;
+      }
+      .row:last-child {
+        margin-bottom: 0;
+      }
+      .row label {
+        font-size: 0.88em;
+        color: #bbb;
+        white-space: nowrap;
+      }
+      .row input[type="range"] {
+        flex: 1;
+        accent-color: #e94560;
+        cursor: pointer;
+      }
+      .row .val {
+        font-size: 0.82em;
+        color: #e94560;
+        font-weight: bold;
+        min-width: 38px;
+        text-align: right;
+      }
+
+      /* TOGGLE */
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .toggle-row label.lbl {
+        font-size: 0.88em;
+        color: #bbb;
+      }
+      .tog {
+        position: relative;
+        width: 46px;
+        height: 24px;
+      }
+      .tog input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .tog .sl {
+        position: absolute;
+        inset: 0;
+        background: #333;
+        border-radius: 24px;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+      .tog .sl:before {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        left: 3px;
+        bottom: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: 0.3s;
+      }
+      .tog input:checked + .sl {
+        background: #e94560;
+      }
+      .tog input:checked + .sl:before {
+        transform: translateX(22px);
+      }
+
+      /* BUTTONS */
+      .btn {
+        display: block;
+        width: 100%;
+        padding: 11px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.92em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+        margin-bottom: 8px;
+        letter-spacing: 0.5px;
+      }
+      .btn:last-child {
+        margin-bottom: 0;
+      }
+      .btn:active {
+        transform: scale(0.97);
+        opacity: 0.85;
+      }
+      .btn-primary {
+        background: #e94560;
+        color: #fff;
+      }
+      .btn-secondary {
+        background: #1e1e35;
+        color: #bbb;
+        border: 1px solid #3a3a5a;
+      }
+      .btn-success {
+        background: #00b894;
+        color: #fff;
+      }
+
+      /* EMOTE GRID */
+      .emote-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .emote-btn {
+        background: #1e1e35;
+        border: 1px solid #2a2a4a;
+        border-radius: 8px;
+        padding: 10px 4px;
+        font-size: 0.72em;
+        color: #aaa;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.15s;
+        line-height: 1.3;
+      }
+      .emote-btn:active {
+        background: #e94560;
+        color: #fff;
+        border-color: #e94560;
+      }
+
+      /* CONNECT INPUT */
+      .connect-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .connect-row input {
+        flex: 1;
+        padding: 9px 12px;
+        background: #1e1e35;
+        border: 1px solid #3a3a5a;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 0.88em;
+      }
+      .connect-row input:focus {
+        outline: none;
+        border-color: #e94560;
+      }
+      .connect-row button {
+        padding: 9px 16px;
+        border: none;
+        border-radius: 8px;
+        background: #e94560;
+        color: #fff;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.88em;
+        white-space: nowrap;
+      }
+
+      /* TOAST */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #e94560;
+        color: #fff;
+        padding: 10px 22px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+        white-space: nowrap;
+        z-index: 999;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+
+      /* IP hint */
+      .hint {
+        font-size: 0.75em;
+        color: #555;
+        margin-top: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>DASAI MOCHI</h1>
+      <p>Remote Control Panel</p>
+      <div class="status">
+        <div class="dot off" id="dot"></div>
+        <span id="statusText">Belum terhubung</span>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <!-- CONNECT -->
+      <div class="card">
+        <div class="card-title">Koneksi</div>
+        <div class="connect-row">
+          <input
+            type="text"
+            id="ipInput"
+            value="192.168.4.1"
+            placeholder="IP Address"
+          />
+          <button onclick="connect()">Connect</button>
+        </div>
+        <p class="hint">
+          Default: sambungkan HP ke WiFi "DasaiMochi", password "mochi1234"
+        </p>
+      </div>
+
+      <!-- ANIMASI SETTINGS -->
+      <div class="card">
+        <div class="card-title">Animasi</div>
+
+        <div class="row">
+          <label>Kecepatan</label>
+          <input
+            type="range"
+            id="speed"
+            min="1"
+            max="5"
+            value="3"
+            oninput="
+              document.getElementById('speedVal').textContent = this.value;
+              sendSet('speed', this.value);
+            "
+          />
+          <span class="val" id="speedVal">3</span>
+        </div>
+
+        <div class="row">
+          <label>Jeda Emote</label>
+          <input
+            type="range"
+            id="delay"
+            min="500"
+            max="5000"
+            step="500"
+            value="1500"
+            oninput="
+              document.getElementById('delayVal').textContent =
+                (this.value / 1000).toFixed(1) + 's';
+              sendSet('delay', this.value);
+            "
+          />
+          <span class="val" id="delayVal">1.5s</span>
+        </div>
+
+        <div class="row">
+          <label>Brightness</label>
+          <input
+            type="range"
+            id="bright"
+            min="50"
+            max="255"
+            value="200"
+            oninput="
+              document.getElementById('brightVal').textContent = this.value;
+              sendSet('bright', this.value);
+            "
+          />
+          <span class="val" id="brightVal">200</span>
+        </div>
+      </div>
+
+      <!-- SUARA -->
+      <div class="card">
+        <div class="card-title">Suara</div>
+        <div class="toggle-row">
+          <label class="lbl">Buzzer</label>
+          <label class="tog">
+            <input
+              type="checkbox"
+              id="sound"
+              checked
+              onchange="sendSet('sound', this.checked ? 1 : 0)"
+            />
+            <span class="sl"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- AKSI -->
+      <div class="card">
+        <div class="card-title">Aksi Cepat</div>
+        <button class="btn btn-primary" onclick="sendCmd('skip')">
+          ⏭ Skip Emote
+        </button>
+        <button class="btn btn-secondary" onclick="sendCmd('menu')">
+          ☰ Buka Menu
+        </button>
+        <button class="btn btn-secondary" onclick="sendCmd('idle')">
+          💤 Mode Idle
+        </button>
+      </div>
+
+      <!-- EMOTE TRIGGER -->
+      <div class="card">
+        <div class="card-title">Trigger Emote</div>
+        <div class="emote-grid" id="emoteGrid"></div>
+      </div>
+
+      <!-- SAVE -->
+      <button
+        class="btn btn-success"
+        onclick="
+          sendCmd('save');
+          showToast('Settings disimpan!');
+        "
+      >
+        💾 Simpan Settings
+      </button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      // ===== CONFIG =====
+      const EMOTES = [
+        "hidung_berasap",
+        "tanjiro",
+        "yakuza",
+        "ngiler",
+        "evil_laugh",
+        "mengejek",
+        "bersin_2",
+        "fire_eye",
+        "kiss",
+        "sirene",
+        "musim_gugur",
+        "menangis",
+        "menguap",
+        "shining",
+      ];
+
+      // ===== WEBSOCKET =====
+      let ws = null;
+      let reconnectTimer = null;
+
+      function connect() {
+        const ip = document.getElementById("ipInput").value.trim();
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+        setStatus(false, "Menghubungkan...");
+        openWS(ip);
+      }
+
+      function openWS(ip) {
+        try {
+          ws = new WebSocket("ws://" + ip + ":81");
+        } catch (e) {
+          setStatus(false, "Gagal connect");
+          return;
+        }
+
+        ws.onopen = () => {
+          setStatus(true, "Terhubung ke " + ip);
+          showToast("Connected!");
+        };
+
+        ws.onclose = () => {
+          setStatus(false, "Terputus — reconnecting...");
+          ws = null;
+          reconnectTimer = setTimeout(() => openWS(ip), 3000);
+        };
+
+        ws.onerror = () => {
+          setStatus(false, "Error koneksi");
+        };
+
+        ws.onmessage = (e) => {
+          try {
+            const d = JSON.parse(e.data);
+            if (d.speed !== undefined) {
+              document.getElementById("speed").value = d.speed;
+              document.getElementById("speedVal").textContent = d.speed;
+            }
+            if (d.delay !== undefined) {
+              document.getElementById("delay").value = d.delay;
+              document.getElementById("delayVal").textContent =
+                (d.delay / 1000).toFixed(1) + "s";
+            }
+            if (d.bright !== undefined) {
+              document.getElementById("bright").value = d.bright;
+              document.getElementById("brightVal").textContent = d.bright;
+            }
+            if (d.sound !== undefined) {
+              document.getElementById("sound").checked = !!d.sound;
+            }
+          } catch (e) {}
+        };
+      }
+
+      function setStatus(connected, text) {
+        document.getElementById("dot").className =
+          "dot " + (connected ? "on" : "off");
+        document.getElementById("statusText").textContent = text;
+      }
+
+      // ===== SEND =====
+      function sendSet(key, val) {
+        send({ type: "set", key, val: parseInt(val) });
+      }
+
+      function sendCmd(cmd) {
+        send({ type: "cmd", cmd });
+      }
+
+      function send(obj) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(obj));
+        } else {
+          showToast("Belum terhubung!");
+        }
+      }
+
+      // ===== EMOTE GRID =====
+      const grid = document.getElementById("emoteGrid");
+      EMOTES.forEach((name, idx) => {
+        const btn = document.createElement("div");
+        btn.className = "emote-btn";
+        btn.textContent = name.replace(/_/g, " ");
+        btn.onclick = () => {
+          sendCmd("emote:" + idx);
+          showToast("Trigger: " + name);
+        };
+        grid.appendChild(btn);
+      });
+
+      // ===== TOAST =====
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2000);
+      }
+
+      // Auto connect on load
+      connect();
+    </script>
+  </body>
+</html>
