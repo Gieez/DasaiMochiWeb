@@ -91,6 +91,37 @@
     <p class="hint">Sambungkan HP ke WiFi "DasaiMochi", password "12345678"</p>
   </div>
 
+    <!-- NAMA CUSTOM -->
+  <div class="card">
+    <div class="card-title">Nama Custom</div>
+
+    <div class="connect-row">
+      <input
+        type="text"
+        id="nameInput"
+        maxlength="15"
+        placeholder="Nama (max 15 char)"
+      />
+      <button onclick="sendName()">Simpan</button>
+    </div>
+
+    <p class="hint" id="nameHint">-</p>
+  </div>
+
+  <!-- BLE STATUS -->
+  <div class="card">
+    <div class="card-title">BLE / ANCS</div>
+
+    <div class="status" style="justify-content:flex-start">
+      <div class="dot off" id="bleDot"></div>
+      <span id="bleText">BLE Off</span>
+    </div>
+
+    <p class="hint">
+      Aktifkan BLE di menu mochi untuk terima notif iPhone
+    </p>
+  </div>
+
   <!-- DRAW TO OLED -->
   <div class="card">
     <div class="card-title">Gambar ke OLED</div>
@@ -162,6 +193,21 @@
       <input type="range" id="bright" min="50" max="255" value="200"
         oninput="document.getElementById('brightVal').textContent=this.value;sendSet('bright',this.value)"/>
       <span class="val" id="brightVal">200</span>
+    </div>
+    <div class="row">
+      <label>Auto-Dim</label>
+
+      <input
+        type="range"
+        id="dim"
+        min="0"
+        max="60"
+        step="1"
+        value="30"
+        oninput="updateDimLabel(this.value);sendSet('dim',this.value)"
+      />
+
+        <span class="val" id="dimVal">30s</span>
     </div>
   </div>
 
@@ -239,10 +285,57 @@ function openWS(ip){
   ws.onmessage=(e)=>{
     try{
       const d=JSON.parse(e.data);
-      if(d.speed!==undefined){document.getElementById('speed').value=d.speed;document.getElementById('speedVal').textContent=d.speed;}
-      if(d.delay!==undefined){document.getElementById('delay').value=d.delay;document.getElementById('delayVal').textContent=(d.delay/1000).toFixed(1)+'s';}
-      if(d.bright!==undefined){document.getElementById('bright').value=d.bright;document.getElementById('brightVal').textContent=d.bright;}
-      if(d.sound!==undefined){document.getElementById('sound').checked=!!d.sound;}
+
+      if(d.speed!==undefined){
+        document.getElementById('speed').value=d.speed;
+        document.getElementById('speedVal').textContent=d.speed;
+      }
+
+      if(d.delay!==undefined){
+        document.getElementById('delay').value=d.delay;
+        document.getElementById('delayVal').textContent=(d.delay/1000).toFixed(1)+'s';
+      }
+
+      if(d.bright!==undefined){
+        document.getElementById('bright').value=d.bright;
+        document.getElementById('brightVal').textContent=d.bright;
+      }
+
+      if(d.sound!==undefined){
+        document.getElementById('sound').checked=!!d.sound;
+      }
+
+      // AUTO DIM
+      if(d.dim!==undefined){
+        const dim=document.getElementById('dim');
+        if(dim){
+          dim.value=d.dim;
+          updateDimLabel(d.dim);
+        }
+      }
+
+      // CUSTOM NAME
+      if(d.name!==undefined){
+        document.getElementById('nameInput').value=d.name;
+        document.getElementById('nameHint').textContent='Nama: '+d.name;
+      }
+
+      // BLE STATUS
+      if(d.ble!==undefined){
+        const dot=document.getElementById('bleDot');
+        const txt=document.getElementById('bleText');
+
+        dot.className='dot '+(d.ble?'on':'off');
+        txt.textContent=d.ble
+          ? 'BLE Connected'
+          : 'BLE Off/Disconnected';
+      }
+
+      // NAME SAVED
+      if(d.nameOk!==undefined){
+        showToast('Nama disimpan: '+d.name);
+      }
+
     }catch(e){}
   };
 }
@@ -254,9 +347,29 @@ function setStatus(ok,txt){
 
 function sendSet(key,val){send({type:'set',key,val:parseInt(val)});}
 function sendCmd(cmd){send({type:'cmd',cmd});}
+function sendName(){
+  const name=document.getElementById('nameInput').value.trim();
+
+  if(!name){
+    showToast('Nama tidak boleh kosong!');
+    return;
+  }
+
+  if(name.length>15){
+    showToast('Maks 15 karakter!');
+    return;
+  }
+
+  send({type:'name',val:name});
+  showToast('Nama disimpan!');
+}
 function send(obj){
   if(ws&&ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify(obj));
   else showToast('Belum terhubung!');
+}
+function updateDimLabel(v){
+  const lbl=+v===0?'Off':(+v+'s');
+  document.getElementById('dimVal').textContent=lbl;
 }
 
 // ============================================================
@@ -264,15 +377,29 @@ function send(obj){
 // ============================================================
 function resetSettings(){
   if(!confirm('Reset semua settings ke default?')) return;
+
   sendSet('speed',3);
   sendSet('delay',1500);
   sendSet('bright',200);
   sendSet('sound',1);
-  document.getElementById('speed').value=3;    document.getElementById('speedVal').textContent=3;
-  document.getElementById('delay').value=1500; document.getElementById('delayVal').textContent='1.5s';
-  document.getElementById('bright').value=200; document.getElementById('brightVal').textContent=200;
+  sendSet('dim',30);
+
+  document.getElementById('speed').value=3;
+  document.getElementById('speedVal').textContent=3;
+
+  document.getElementById('delay').value=1500;
+  document.getElementById('delayVal').textContent='1.5s';
+
+  document.getElementById('bright').value=200;
+  document.getElementById('brightVal').textContent=200;
+
   document.getElementById('sound').checked=true;
+
+  document.getElementById('dim').value=30;
+  updateDimLabel(30);
+
   setTimeout(()=>sendCmd('save'),300);
+
   showToast('Settings direset!');
 }
 
