@@ -91,35 +91,24 @@
     <p class="hint">Sambungkan HP ke WiFi "DasaiMochi", password "12345678"</p>
   </div>
 
-    <!-- NAMA CUSTOM -->
+  <!-- NAMA CUSTOM -->
   <div class="card">
     <div class="card-title">Nama Custom</div>
-
     <div class="connect-row">
-      <input
-        type="text"
-        id="nameInput"
-        maxlength="15"
-        placeholder="Nama (max 15 char)"
-      />
+      <input type="text" id="nameInput" maxlength="15" placeholder="Nama (max 15 char)"/>
       <button onclick="sendName()">Simpan</button>
     </div>
-
     <p class="hint" id="nameHint">-</p>
   </div>
 
   <!-- BLE STATUS -->
   <div class="card">
     <div class="card-title">BLE / ANCS</div>
-
     <div class="status" style="justify-content:flex-start">
       <div class="dot off" id="bleDot"></div>
       <span id="bleText">BLE Off</span>
     </div>
-
-    <p class="hint">
-      Aktifkan BLE di menu mochi untuk terima notif iPhone
-    </p>
+    <p class="hint">Aktifkan BLE di menu mochi untuk terima notif iPhone</p>
   </div>
 
   <!-- DRAW TO OLED -->
@@ -156,7 +145,6 @@
       placeholder="Tulis pesan di sini (maks 200 kata)..."
       oninput="updateWordCount()"></textarea>
     <div class="word-count" id="wordCount">0 / 200 kata</div>
-
     <div class="marquee-opts">
       <div class="mopt active" id="mspd1" onclick="setMarqueeSpeed(1)">🐢 Lambat</div>
       <div class="mopt" id="mspd2" onclick="setMarqueeSpeed(2)">🚶 Normal</div>
@@ -196,18 +184,9 @@
     </div>
     <div class="row">
       <label>Auto-Dim</label>
-
-      <input
-        type="range"
-        id="dim"
-        min="0"
-        max="60"
-        step="1"
-        value="30"
-        oninput="updateDimLabel(this.value);sendSet('dim',this.value)"
-      />
-
-        <span class="val" id="dimVal">30s</span>
+      <input type="range" id="dim" min="0" max="60" step="1" value="30"
+        oninput="updateDimLabel(this.value);sendSet('dim',this.value)"/>
+      <span class="val" id="dimVal">30s</span>
     </div>
   </div>
 
@@ -233,7 +212,10 @@
 
   <!-- EMOTE TRIGGER -->
   <div class="card">
-    <div class="card-title">Trigger Emote</div>
+    <div class="card-title">
+      Trigger Emote
+      <span style="font-size:.8em;color:#555;letter-spacing:0;font-weight:400">18 emote</span>
+    </div>
     <div class="emote-grid" id="emoteGrid"></div>
   </div>
 
@@ -251,298 +233,305 @@
 
 <script>
 // ============================================================
-// EMOTES
+// EMOTES — urutan HARUS sama persis dengan EMOTE_LIST di anim_registry.h
+// index 0..17 langsung di-send ke firmware sebagai wsEmoteTarget
 // ============================================================
-const EMOTES=[
-  "hidung_berasap","tanjiro","yakuza","ngiler","evil_laugh",
-  "mengejek","bersin_2","fire_eye","kiss","sirene",
-  "musim_gugur","menangis","menguap","shining"
+const EMOTES = [
+  "hidung_berasap",  // 0
+  "tanjiro",         // 1
+  "yakuza",          // 2
+  "ngiler",          // 3
+  "evil_laugh",      // 4
+  "mengejek",        // 5
+  "bersin_1",        // 6  ← FIX: tadinya skip ke bersin_2
+  "bersin_2",        // 7
+  "fire_eye",        // 8
+  "kiss",            // 9
+  "sirene",          // 10
+  "musim_gugur",     // 11
+  "menangis",        // 12
+  "menguap",         // 13
+  "shining",         // 14
+  "rising_star",     // 15  ← FIX: tadinya tidak ada
+  "spido",           // 16  ← FIX: tadinya tidak ada
+  "tidur",           // 17  ← FIX: tadinya tidak ada
 ];
 
 // ============================================================
 // WEBSOCKET
 // ============================================================
-let ws=null, reconnectTimer=null;
+let ws = null, reconnectTimer = null;
 
-function connect(){
-  const ip=document.getElementById('ipInput').value.trim();
-  if(ws){ws.close();ws=null;}
-  if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null;}
-  setStatus(false,'Menghubungkan...');
+function connect() {
+  const ip = document.getElementById('ipInput').value.trim();
+  if (!ip) return;
+  if (ws) { ws.close(); ws = null; }
+  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+  setStatus(false, 'Menghubungkan...');
   openWS(ip);
 }
 
-function openWS(ip){
-  try{ws=new WebSocket('ws://'+ip+':81');}
-  catch(e){setStatus(false,'Gagal connect');return;}
-  ws.onopen=()=>{setStatus(true,'Terhubung ke '+ip);showToast('Connected!');};
-  ws.onclose=()=>{
-    setStatus(false,'Terputus — reconnecting...');
-    ws=null;
-    reconnectTimer=setTimeout(()=>openWS(ip),3000);
+function openWS(ip) {
+  try { ws = new WebSocket('ws://' + ip + ':81'); }
+  catch (e) { setStatus(false, 'Gagal connect'); return; }
+
+  ws.onopen = () => {
+    setStatus(true, 'Terhubung ke ' + ip);
+    showToast('Connected! ✓');
   };
-  ws.onerror=()=>setStatus(false,'Error koneksi');
-  ws.onmessage=(e)=>{
-    try{
-      const d=JSON.parse(e.data);
 
-      if(d.speed!==undefined){
-        document.getElementById('speed').value=d.speed;
-        document.getElementById('speedVal').textContent=d.speed;
+  ws.onclose = () => {
+    setStatus(false, 'Terputus — reconnecting...');
+    ws = null;
+    reconnectTimer = setTimeout(() => openWS(ip), 3000);
+  };
+
+  ws.onerror = () => setStatus(false, 'Error koneksi');
+
+  ws.onmessage = (e) => {
+    try {
+      const d = JSON.parse(e.data);
+
+      if (d.speed !== undefined) {
+        document.getElementById('speed').value = d.speed;
+        document.getElementById('speedVal').textContent = d.speed;
+      }
+      if (d.delay !== undefined) {
+        document.getElementById('delay').value = d.delay;
+        document.getElementById('delayVal').textContent = (d.delay / 1000).toFixed(1) + 's';
+      }
+      if (d.bright !== undefined) {
+        document.getElementById('bright').value = d.bright;
+        document.getElementById('brightVal').textContent = d.bright;
+      }
+      if (d.sound !== undefined) {
+        document.getElementById('sound').checked = !!d.sound;
+      }
+      if (d.dim !== undefined) {
+        document.getElementById('dim').value = d.dim;
+        updateDimLabel(d.dim);
+      }
+      if (d.name !== undefined) {
+        document.getElementById('nameInput').value = d.name;
+        document.getElementById('nameHint').textContent = 'Nama saat ini: ' + d.name;
       }
 
-      if(d.delay!==undefined){
-        document.getElementById('delay').value=d.delay;
-        document.getElementById('delayVal').textContent=(d.delay/1000).toFixed(1)+'s';
+      // FIX Bug 2: toast nama HANYA setelah dapat konfirmasi dari ESP32
+      if (d.nameOk !== undefined) {
+        showToast('✓ Nama disimpan: ' + (d.name || ''));
+        document.getElementById('nameHint').textContent = 'Nama saat ini: ' + (d.name || '');
       }
 
-      if(d.bright!==undefined){
-        document.getElementById('bright').value=d.bright;
-        document.getElementById('brightVal').textContent=d.bright;
+      if (d.ble !== undefined) {
+        const dot = document.getElementById('bleDot');
+        const txt = document.getElementById('bleText');
+        dot.className = 'dot ' + (d.ble ? 'on' : 'off');
+        txt.textContent = d.ble ? 'BLE Connected' : 'BLE Off / Disconnected';
       }
-
-      if(d.sound!==undefined){
-        document.getElementById('sound').checked=!!d.sound;
-      }
-
-      // AUTO DIM
-      if(d.dim!==undefined){
-        const dim=document.getElementById('dim');
-        if(dim){
-          dim.value=d.dim;
-          updateDimLabel(d.dim);
-        }
-      }
-
-      // CUSTOM NAME
-      if(d.name!==undefined){
-        document.getElementById('nameInput').value=d.name;
-        document.getElementById('nameHint').textContent='Nama: '+d.name;
-      }
-
-      // BLE STATUS
-      if(d.ble!==undefined){
-        const dot=document.getElementById('bleDot');
-        const txt=document.getElementById('bleText');
-
-        dot.className='dot '+(d.ble?'on':'off');
-        txt.textContent=d.ble
-          ? 'BLE Connected'
-          : 'BLE Off/Disconnected';
-      }
-
-      // NAME SAVED
-      if(d.nameOk!==undefined){
-        showToast('Nama disimpan: '+d.name);
-      }
-
-    }catch(e){}
+    } catch (e) {}
   };
 }
 
-function setStatus(ok,txt){
-  document.getElementById('dot').className='dot '+(ok?'on':'off');
-  document.getElementById('statusText').textContent=txt;
+function setStatus(ok, txt) {
+  document.getElementById('dot').className = 'dot ' + (ok ? 'on' : 'off');
+  document.getElementById('statusText').textContent = txt;
 }
 
-function sendSet(key,val){send({type:'set',key,val:parseInt(val)});}
-function sendCmd(cmd){send({type:'cmd',cmd});}
-function sendName(){
-  const name=document.getElementById('nameInput').value.trim();
+function sendSet(key, val) { send({ type: 'set', key, val: parseInt(val) }); }
+function sendCmd(cmd) { send({ type: 'cmd', cmd }); }
 
-  if(!name){
-    showToast('Nama tidak boleh kosong!');
-    return;
-  }
-
-  if(name.length>15){
-    showToast('Maks 15 karakter!');
-    return;
-  }
-
-  send({type:'name',val:name});
-  showToast('Nama disimpan!');
+// FIX Bug 2: hapus showToast() prematur — tunggu konfirmasi nameOk dari ESP32
+function sendName() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) { showToast('Nama tidak boleh kosong!'); return; }
+  if (name.length > 15) { showToast('Maks 15 karakter!'); return; }
+  send({ type: 'name', val: name });
+  // Toast akan muncul saat ESP32 reply dengan nameOk
+  document.getElementById('nameHint').textContent = 'Menyimpan...';
 }
-function send(obj){
-  if(ws&&ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify(obj));
+
+function send(obj) {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
   else showToast('Belum terhubung!');
 }
-function updateDimLabel(v){
-  const lbl=+v===0?'Off':(+v+'s');
-  document.getElementById('dimVal').textContent=lbl;
+
+function updateDimLabel(v) {
+  document.getElementById('dimVal').textContent = +v === 0 ? 'Off' : (+v + 's');
 }
 
 // ============================================================
 // RESET SETTINGS
 // ============================================================
-function resetSettings(){
-  if(!confirm('Reset semua settings ke default?')) return;
-
-  sendSet('speed',3);
-  sendSet('delay',1500);
-  sendSet('bright',200);
-  sendSet('sound',1);
-  sendSet('dim',30);
-
-  document.getElementById('speed').value=3;
-  document.getElementById('speedVal').textContent=3;
-
-  document.getElementById('delay').value=1500;
-  document.getElementById('delayVal').textContent='1.5s';
-
-  document.getElementById('bright').value=200;
-  document.getElementById('brightVal').textContent=200;
-
-  document.getElementById('sound').checked=true;
-
-  document.getElementById('dim').value=30;
+function resetSettings() {
+  if (!confirm('Reset semua settings ke default?')) return;
+  sendSet('speed', 3);
+  sendSet('delay', 1500);
+  sendSet('bright', 200);
+  sendSet('sound', 1);
+  sendSet('dim', 30);
+  document.getElementById('speed').value = 3;
+  document.getElementById('speedVal').textContent = 3;
+  document.getElementById('delay').value = 1500;
+  document.getElementById('delayVal').textContent = '1.5s';
+  document.getElementById('bright').value = 200;
+  document.getElementById('brightVal').textContent = 200;
+  document.getElementById('sound').checked = true;
+  document.getElementById('dim').value = 30;
   updateDimLabel(30);
-
-  setTimeout(()=>sendCmd('save'),300);
-
+  setTimeout(() => sendCmd('save'), 300);
   showToast('Settings direset!');
 }
 
 // ============================================================
 // DRAW TO OLED
 // ============================================================
-const dc=document.getElementById('drawCanvas');
-const dctx=dc.getContext('2d');
-const SCALE=3;
-dc.style.width=(128*SCALE)+'px';
-dc.style.height=(64*SCALE)+'px';
-dctx.fillStyle='#000';dctx.fillRect(0,0,128,64);
+const dc = document.getElementById('drawCanvas');
+const dctx = dc.getContext('2d');
+const SCALE = 3;
+dc.style.width = (128 * SCALE) + 'px';
+dc.style.height = (64 * SCALE) + 'px';
+dctx.fillStyle = '#000';
+dctx.fillRect(0, 0, 128, 64);
 
-let tool='pen',penSize=2,drawing=false;
+let tool = 'pen', penSize = 2, drawing = false;
 
-function setTool(t){
-  tool=t;
-  ['Pen','Eraser','Fill'].forEach(n=>{
-    const el=document.getElementById('tool'+n);
-    if(el) el.classList.toggle('active',n.toLowerCase()===t);
+function setTool(t) {
+  tool = t;
+  ['Pen', 'Eraser', 'Fill'].forEach(n => {
+    const el = document.getElementById('tool' + n);
+    if (el) el.classList.toggle('active', n.toLowerCase() === t);
   });
 }
 
-function getPos(e){
-  const r=dc.getBoundingClientRect();
-  const sx=128/r.width,sy=64/r.height;
-  const src=e.touches?e.touches[0]:e;
-  return[Math.floor((src.clientX-r.left)*sx),Math.floor((src.clientY-r.top)*sy)];
+function getPos(e) {
+  const r = dc.getBoundingClientRect();
+  const sx = 128 / r.width, sy = 64 / r.height;
+  const src = e.touches ? e.touches[0] : e;
+  return [Math.floor((src.clientX - r.left) * sx), Math.floor((src.clientY - r.top) * sy)];
 }
 
-function drawAt(x,y){
-  if(tool==='pen'){dctx.fillStyle='#fff';dctx.fillRect(x-Math.floor(penSize/2),y-Math.floor(penSize/2),penSize,penSize);}
-  else if(tool==='eraser'){dctx.fillStyle='#000';dctx.fillRect(x-Math.floor(penSize/2),y-Math.floor(penSize/2),penSize,penSize);}
-  else if(tool==='fill'){floodFill(x,y,dctx.getImageData(x,y,1,1).data[0]>128?0:255);}
+function drawAt(x, y) {
+  if (tool === 'pen') { dctx.fillStyle = '#fff'; dctx.fillRect(x - Math.floor(penSize / 2), y - Math.floor(penSize / 2), penSize, penSize); }
+  else if (tool === 'eraser') { dctx.fillStyle = '#000'; dctx.fillRect(x - Math.floor(penSize / 2), y - Math.floor(penSize / 2), penSize, penSize); }
+  else if (tool === 'fill') { floodFill(x, y, dctx.getImageData(x, y, 1, 1).data[0] > 128 ? 0 : 255); }
 }
 
-function floodFill(sx,sy,target){
-  const img=dctx.getImageData(0,0,128,64);
-  const d=img.data;
-  const fill=target===255?[255,255,255,255]:[0,0,0,255];
-  const stack=[[sx,sy]];
-  const vis=new Uint8Array(128*64);
-  while(stack.length){
-    const[x,y]=stack.pop();
-    if(x<0||x>=128||y<0||y>=64)continue;
-    const i=(y*128+x)*4;
-    if(vis[y*128+x])continue;
-    if((d[i]>128?255:0)!==target)continue;
-    vis[y*128+x]=1;
-    d[i]=fill[0];d[i+1]=fill[1];d[i+2]=fill[2];d[i+3]=fill[3];
-    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+function floodFill(sx, sy, target) {
+  const img = dctx.getImageData(0, 0, 128, 64);
+  const d = img.data;
+  const fill = target === 255 ? [255, 255, 255, 255] : [0, 0, 0, 255];
+  const stack = [[sx, sy]];
+  const vis = new Uint8Array(128 * 64);
+  while (stack.length) {
+    const [x, y] = stack.pop();
+    if (x < 0 || x >= 128 || y < 0 || y >= 64) continue;
+    const i = (y * 128 + x) * 4;
+    if (vis[y * 128 + x]) continue;
+    if ((d[i] > 128 ? 255 : 0) !== target) continue;
+    vis[y * 128 + x] = 1;
+    d[i] = fill[0]; d[i + 1] = fill[1]; d[i + 2] = fill[2]; d[i + 3] = fill[3];
+    stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
   }
-  dctx.putImageData(img,0,0);
+  dctx.putImageData(img, 0, 0);
 }
 
-dc.addEventListener('mousedown',e=>{drawing=true;drawAt(...getPos(e));});
-dc.addEventListener('mousemove',e=>{if(drawing)drawAt(...getPos(e));});
-dc.addEventListener('mouseup',()=>drawing=false);
-dc.addEventListener('mouseleave',()=>drawing=false);
-dc.addEventListener('touchstart',e=>{e.preventDefault();drawing=true;drawAt(...getPos(e));},{passive:false});
-dc.addEventListener('touchmove',e=>{e.preventDefault();if(drawing)drawAt(...getPos(e));},{passive:false});
-dc.addEventListener('touchend',()=>drawing=false);
+dc.addEventListener('mousedown', e => { drawing = true; drawAt(...getPos(e)); });
+dc.addEventListener('mousemove', e => { if (drawing) drawAt(...getPos(e)); });
+dc.addEventListener('mouseup', () => drawing = false);
+dc.addEventListener('mouseleave', () => drawing = false);
+dc.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; drawAt(...getPos(e)); }, { passive: false });
+dc.addEventListener('touchmove', e => { e.preventDefault(); if (drawing) drawAt(...getPos(e)); }, { passive: false });
+dc.addEventListener('touchend', () => drawing = false);
 
-function clearCanvas(){dctx.fillStyle='#000';dctx.fillRect(0,0,128,64);}
-function invertCanvas(){
-  const img=dctx.getImageData(0,0,128,64);
-  for(let i=0;i<img.data.length;i+=4){img.data[i]=255-img.data[i];img.data[i+1]=255-img.data[i+1];img.data[i+2]=255-img.data[i+2];}
-  dctx.putImageData(img,0,0);
+function clearCanvas() { dctx.fillStyle = '#000'; dctx.fillRect(0, 0, 128, 64); }
+function invertCanvas() {
+  const img = dctx.getImageData(0, 0, 128, 64);
+  for (let i = 0; i < img.data.length; i += 4) {
+    img.data[i] = 255 - img.data[i];
+    img.data[i + 1] = 255 - img.data[i + 1];
+    img.data[i + 2] = 255 - img.data[i + 2];
+  }
+  dctx.putImageData(img, 0, 0);
 }
 
-function sendDraw(){
-  const img=dctx.getImageData(0,0,128,64);
-  const bytes=new Array(1024).fill(0);
-  for(let row=0;row<64;row++){
-    for(let bc=0;bc<16;bc++){
-      let b=0;
-      for(let bit=0;bit<8;bit++){
-        const col=bc*8+bit;
-        const i=(row*128+col)*4;
-        if(img.data[i]>128) b|=(0x80>>bit);
+function sendDraw() {
+  const img = dctx.getImageData(0, 0, 128, 64);
+  const bytes = new Array(1024).fill(0);
+  for (let row = 0; row < 64; row++) {
+    for (let bc = 0; bc < 16; bc++) {
+      let b = 0;
+      for (let bit = 0; bit < 8; bit++) {
+        const col = bc * 8 + bit;
+        const i = (row * 128 + col) * 4;
+        if (img.data[i] > 128) b |= (0x80 >> bit);
       }
-      bytes[row*16+bc]=b;
+      bytes[row * 16 + bc] = b;
     }
   }
-  send({type:'draw',px:bytes});
+  send({ type: 'draw', px: bytes });
   showToast('Terkirim! Muncul ~4 detik');
 }
 
 // ============================================================
-// MARQUEE - Pesan Berjalan Bintang
+// MARQUEE
 // ============================================================
-let marqueeSpeed=1, starDensity=1;
+let marqueeSpeed = 1, starDensity = 1;
 
-function setMarqueeSpeed(s){
-  marqueeSpeed=s;
-  [1,2,3].forEach(i=>{
-    document.getElementById('mspd'+i).classList.toggle('active',i===s);
-  });
+function setMarqueeSpeed(s) {
+  marqueeSpeed = s;
+  [1, 2, 3].forEach(i => document.getElementById('mspd' + i).classList.toggle('active', i === s));
 }
-function setStarDensity(d){
-  starDensity=d;
-  [1,2,3].forEach(i=>{
-    document.getElementById('mstar'+i).classList.toggle('active',i===d);
-  });
+function setStarDensity(d) {
+  starDensity = d;
+  [1, 2, 3].forEach(i => document.getElementById('mstar' + i).classList.toggle('active', i === d));
 }
-function updateWordCount(){
-  const txt=document.getElementById('marqueeText').value.trim();
-  const words=txt?txt.split(/\s+/).length:0;
-  document.getElementById('wordCount').textContent=words+' / 200 kata';
-  document.getElementById('wordCount').style.color=words>200?'#e94560':'#555';
+function updateWordCount() {
+  const txt = document.getElementById('marqueeText').value.trim();
+  const words = txt ? txt.split(/\s+/).length : 0;
+  document.getElementById('wordCount').textContent = words + ' / 200 kata';
+  document.getElementById('wordCount').style.color = words > 200 ? '#e94560' : '#555';
 }
-function sendMarquee(){
-  const txt=document.getElementById('marqueeText').value.trim();
-  if(!txt){showToast('Tulis pesan dulu!');return;}
-  const words=txt.split(/\s+/);
-  if(words.length>200){showToast('Maks 200 kata!');return;}
-  send({type:'marquee',text:txt,speed:marqueeSpeed,stars:starDensity});
+function sendMarquee() {
+  const txt = document.getElementById('marqueeText').value.trim();
+  if (!txt) { showToast('Tulis pesan dulu!'); return; }
+  const words = txt.split(/\s+/);
+  if (words.length > 200) { showToast('Maks 200 kata!'); return; }
+  send({ type: 'marquee', text: txt, speed: marqueeSpeed, stars: starDensity });
   showToast('Pesan dikirim ke OLED!');
 }
 
 // ============================================================
-// EMOTE GRID
+// EMOTE GRID — FIX: semua 18 emote dengan index yang benar
 // ============================================================
-const grid=document.getElementById('emoteGrid');
-EMOTES.forEach((name,idx)=>{
-  const btn=document.createElement('div');
-  btn.className='emote-btn';
-  btn.textContent=name.replace(/_/g,' ');
-  btn.onclick=()=>{sendCmd('emote:'+idx);showToast('Trigger: '+name);};
+const grid = document.getElementById('emoteGrid');
+const emoteEmoji = {
+  hidung_berasap: '😤', tanjiro: '🗡️', yakuza: '🐉', ngiler: '🤤',
+  evil_laugh: '😈', mengejek: '😝', bersin_1: '🤧', bersin_2: '🤧',
+  fire_eye: '🔥', kiss: '💋', sirene: '🚨', musim_gugur: '🍂',
+  menangis: '😭', menguap: '🥱', shining: '✨', rising_star: '⭐',
+  spido: '🕷️', tidur: '😴'
+};
+EMOTES.forEach((name, idx) => {
+  const btn = document.createElement('div');
+  btn.className = 'emote-btn';
+  const emoji = emoteEmoji[name] || '▶️';
+  btn.innerHTML = emoji + '<br>' + name.replace(/_/g, ' ');
+  btn.onclick = () => { sendCmd('emote:' + idx); showToast('▶ ' + name); };
   grid.appendChild(btn);
 });
 
 // ============================================================
 // TOAST
 // ============================================================
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2000);
+  setTimeout(() => t.classList.remove('show'), 2000);
 }
 
-connect();
+// FIX Bug 4: tidak auto-connect, biarkan user tekan Connect
+// connect(); ← dihapus
 </script>
 </body>
 </html>
