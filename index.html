@@ -49,6 +49,9 @@
     .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#e94560;color:#fff;padding:10px 22px;border-radius:20px;font-size:.85em;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;z-index:999}
     .toast.show{opacity:1}
     .hint{font-size:.75em;color:#555;margin-top:6px}
+    .ble-steps{margin-top:8px;display:flex;flex-direction:column;gap:5px}
+    .ble-step{display:flex;align-items:flex-start;gap:8px;font-size:.78em;color:#888}
+    .ble-step .num{background:#2a2a4a;color:#e94560;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85em;flex-shrink:0;margin-top:1px}
     /* DRAW */
     .canvas-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
     .oled-frame{border:2px solid #e94560;border-radius:6px;padding:3px;background:#000;display:inline-block}
@@ -104,11 +107,29 @@
   <!-- BLE STATUS -->
   <div class="card">
     <div class="card-title">BLE / ANCS</div>
-    <div class="status" style="justify-content:flex-start">
+    <div class="status" style="justify-content:flex-start;margin-bottom:10px">
       <div class="dot off" id="bleDot"></div>
-      <span id="bleText">BLE Off</span>
+      <span id="bleText">BLE Off / Disconnected</span>
     </div>
-    <p class="hint">Aktifkan BLE di menu mochi untuk terima notif iPhone</p>
+    <!-- Cara aktifkan BLE yang bener -->
+    <div class="ble-steps">
+      <div class="ble-step">
+        <div class="num">1</div>
+        <span>Di mochi, hold 5 detik untuk buka <strong style="color:#bbb">Menu</strong></span>
+      </div>
+      <div class="ble-step">
+        <div class="num">2</div>
+        <span>Tap sampai ke <strong style="color:#bbb">BLE [OFF]</strong>, hold untuk toggle → jadi <strong style="color:#bbb">BLE [ON]</strong></span>
+      </div>
+      <div class="ble-step">
+        <div class="num">3</div>
+        <span>Di iPhone: <strong style="color:#bbb">Pengaturan → Bluetooth</strong> → pilih <strong style="color:#bbb">Dasai Mochi</strong></span>
+      </div>
+      <div class="ble-step">
+        <div class="num">4</div>
+        <span>Izinkan akses notifikasi jika diminta. Status di atas akan jadi hijau.</span>
+      </div>
+    </div>
   </div>
 
   <!-- DRAW TO OLED -->
@@ -243,7 +264,7 @@ const EMOTES = [
   "ngiler",          // 3
   "evil_laugh",      // 4
   "mengejek",        // 5
-  "bersin_1",        // 6  ← FIX: tadinya skip ke bersin_2
+  "bersin_1",        // 6
   "bersin_2",        // 7
   "fire_eye",        // 8
   "kiss",            // 9
@@ -252,9 +273,9 @@ const EMOTES = [
   "menangis",        // 12
   "menguap",         // 13
   "shining",         // 14
-  "rising_star",     // 15  ← FIX: tadinya tidak ada
-  "spido",           // 16  ← FIX: tadinya tidak ada
-  "tidur",           // 17  ← FIX: tadinya tidak ada
+  "rising_star",     // 15
+  "spido",           // 16
+  "tidur",           // 17
 ];
 
 // ============================================================
@@ -316,7 +337,6 @@ function openWS(ip) {
         document.getElementById('nameHint').textContent = 'Nama saat ini: ' + d.name;
       }
 
-      // FIX Bug 2: toast nama HANYA setelah dapat konfirmasi dari ESP32
       if (d.nameOk !== undefined) {
         showToast('✓ Nama disimpan: ' + (d.name || ''));
         document.getElementById('nameHint').textContent = 'Nama saat ini: ' + (d.name || '');
@@ -326,7 +346,7 @@ function openWS(ip) {
         const dot = document.getElementById('bleDot');
         const txt = document.getElementById('bleText');
         dot.className = 'dot ' + (d.ble ? 'on' : 'off');
-        txt.textContent = d.ble ? 'BLE Connected' : 'BLE Off / Disconnected';
+        txt.textContent = d.ble ? 'BLE Connected ✓' : 'BLE Off / Disconnected';
       }
     } catch (e) {}
   };
@@ -340,13 +360,11 @@ function setStatus(ok, txt) {
 function sendSet(key, val) { send({ type: 'set', key, val: parseInt(val) }); }
 function sendCmd(cmd) { send({ type: 'cmd', cmd }); }
 
-// FIX Bug 2: hapus showToast() prematur — tunggu konfirmasi nameOk dari ESP32
 function sendName() {
   const name = document.getElementById('nameInput').value.trim();
   if (!name) { showToast('Nama tidak boleh kosong!'); return; }
   if (name.length > 15) { showToast('Maks 15 karakter!'); return; }
   send({ type: 'name', val: name });
-  // Toast akan muncul saat ESP32 reply dengan nameOk
   document.getElementById('nameHint').textContent = 'Menyimpan...';
 }
 
@@ -501,7 +519,7 @@ function sendMarquee() {
 }
 
 // ============================================================
-// EMOTE GRID — FIX: semua 18 emote dengan index yang benar
+// EMOTE GRID
 // ============================================================
 const grid = document.getElementById('emoteGrid');
 const emoteEmoji = {
@@ -529,9 +547,6 @@ function showToast(msg) {
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2000);
 }
-
-// FIX Bug 4: tidak auto-connect, biarkan user tekan Connect
-// connect(); ← dihapus
 </script>
 </body>
 </html>
